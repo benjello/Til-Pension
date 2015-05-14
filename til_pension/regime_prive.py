@@ -22,13 +22,11 @@ class RegimePrive(RegimeBase):
 
     def sal_cot(self, data):
         select = data.workstate.isin(self.code_regime)
-        sal = data.sali*select
+        sal = data.sali * select
         sal[isnan(sal)] = 0
         return sal
 
     def trim_cot_by_year(self, data, sal_cot):
-        print 'coucou'
-        print self.P_longit
         assert self.P_longit is not None, 'self.P_longit is None'
         P_long = reduce(getattr, self.param_name.split('.'), self.P_longit)
         salref = P_long.salref

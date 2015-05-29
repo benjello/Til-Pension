@@ -127,7 +127,7 @@ def compute_TRI(yearmin, yearmax):
         pensions_contrib['year_dep'][pensions_contrib['ident'].isin(ident_depart)] = yearsim
         cond = (pensions_contrib['ident'].isin(ident_depart)) & (pensions_contrib['regime'] == 'RG')
         pensions_contrib.loc[cond, 'age'] = \
-            data_bounded.info_ind['agem'][data_bounded.info_ind['index'] == ident_depart] // 12
+            data_bounded.info_ind['age_en_mois'][data_bounded.info_ind['index'] == ident_depart] // 12
         for var in ['naiss', 'n_enf', 'findet', 'sexe']:
                 pensions_contrib.loc[cond, var] = \
                     data_bounded.info_ind[var][data_bounded.info_ind['index'] == ident_depart]

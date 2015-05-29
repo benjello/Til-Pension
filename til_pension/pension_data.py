@@ -12,17 +12,17 @@ class PensionData(object):
     '''
     Class à envoyer à Simulation de Til-pension
     '''
-    def __init__(self, workstate, sali, info_ind):
+    def __init__(self, workstate, salaire_imposable, info_ind):
         assert isinstance(workstate, TimeArray)
-        assert isinstance(sali, TimeArray)
+        assert isinstance(salaire_imposable, TimeArray)
         self.workstate = workstate
-        self.sali = sali
+        self.salaire_imposable = salaire_imposable
         self.info_ind = info_ind
         if isinstance(info_ind, DataFrame):
             self.info_ind = info_ind.to_records(index=True)
 
-        assert workstate.dates == sali.dates
-        dates = sali.dates
+        assert workstate.dates == salaire_imposable.dates
+        dates = salaire_imposable.dates
         assert sorted(dates) == dates
         self.last_date = None  # intialisation for assertion in set_dates
         self.set_dates(dates)
@@ -39,11 +39,11 @@ class PensionData(object):
         ''' cf TimeArray '''
         if inplace:
             self.workstate.selected_dates(first, last, date_type, inplace=True)
-            self.sali.selected_dates(first, last, date_type, inplace=True)
-            self.set_dates(self.sali.dates)
+            self.salaire_imposable.selected_dates(first, last, date_type, inplace=True)
+            self.set_dates(self.salaire_imposable.dates)
         else:
             wk = self.workstate.selected_dates(first, last, date_type)
-            sal = self.sali.selected_dates(first, last, date_type)
+            sal = self.salaire_imposable.selected_dates(first, last, date_type)
             return PensionData(wk, sal, self.info_ind)
 
     def selected_regime(self, code_regime):
@@ -52,33 +52,33 @@ class PensionData(object):
         - tous les salaires non-associés à un workstate dans code_regime sont remplacés par 0
         '''
         wk_selection = self.workstate.isin([code_regime])
-        sal = self.sali.copy()
+        sal = self.salaire_imposable.copy()
         work = self.workstate.copy()
         wk_regime = TimeArray(wk_selection*work, sal.dates, name='workstate_regime')
-        sal_regime = TimeArray(wk_selection*sal, sal.dates, name='sali_regime')
+        sal_regime = TimeArray(wk_selection*sal, sal.dates, name='salaire_imposable_regime')
         return PensionData(wk_regime, sal_regime, self.info_ind)
 
     def translate_frequency(self, output_frequency='month', method=None, inplace=False):
         ''' cf TimeArray '''
         if inplace:
             self.workstate.translate_frequency(output_frequency, method, inplace=True)
-            self.sali.translate_frequency(output_frequency, method, inplace=True)
-            self.set_dates(self.sali.dates)
+            self.salaire_imposable.translate_frequency(output_frequency, method, inplace=True)
+            self.set_dates(self.salaire_imposable.dates)
         else:
             wk = self.workstate.translate_frequency(output_frequency, method)
-            sal = self.sali.translate_frequency(output_frequency, method)
+            sal = self.salaire_imposable.translate_frequency(output_frequency, method)
             return PensionData(wk, sal, self.info_ind)
 
     @classmethod
-    def from_arrays(cls, workstate, sali, info_ind, dates=None):
-        if isinstance(sali, DataFrame):
+    def from_arrays(cls, workstate, salaire_imposable, info_ind, dates=None):
+        if isinstance(salaire_imposable, DataFrame):
             assert isinstance(workstate, DataFrame)
             try:
-                assert all(sali.index == workstate.index) and all(sali.index == info_ind.index)
+                assert all(salaire_imposable.index == workstate.index) and all(salaire_imposable.index == info_ind.index)
             except:
-                assert all(sali.index == workstate.index)
-                assert len(sali) == len(info_ind)
-                sal = sali.index
+                assert all(salaire_imposable.index == workstate.index)
+                assert len(salaire_imposable) == len(info_ind)
+                sal = salaire_imposable.index
                 idx = info_ind.index
                 assert all(sal[sal.isin(idx)] == idx[idx.isin(sal)])
                 # si on coince à ce assert ici c'est que l'ordre change
@@ -90,16 +90,16 @@ class PensionData(object):
                 pdb.set_trace()
 
             # TODO: should be done before
-            assert sali.columns.tolist() == workstate.columns.tolist()
-            assert sali.columns.tolist() == (sorted(sali.columns))
-            dates = sali.columns.tolist()
-            sali = array(sali)
+            assert salaire_imposable.columns.tolist() == workstate.columns.tolist()
+            assert salaire_imposable.columns.tolist() == (sorted(salaire_imposable.columns))
+            dates = salaire_imposable.columns.tolist()
+            salaire_imposable = array(salaire_imposable)
             workstate = array(workstate)
 
-        if isinstance(sali, ndarray):
+        if isinstance(salaire_imposable, ndarray):
             assert isinstance(workstate, ndarray)
-            sali = TimeArray(sali, dates, name='sali')
+            salaire_imposable = TimeArray(salaire_imposable, dates, name='salaire_imposable')
             workstate = TimeArray(workstate, dates, name='workstate')
 
         assert in1d(info_ind['sexe'], [0, 1]).all()
-        return PensionData(workstate, sali, info_ind)
+        return PensionData(workstate, salaire_imposable, info_ind)

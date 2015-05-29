@@ -8,7 +8,7 @@ import inspect
 import cProfile
 
 basic_info = [('index', '<i8'), ('n_enf', '<f8'), ('sexe', '<f8'),
-              ('tauxprime', '<f8'), ('naiss', 'O'), ('agem', '<f8'),
+              ('tauxprime', '<f8'), ('naiss', 'O'), ('age_en_mois', '<f8'),
               ('nb_pac', '<f8')]
 
 
@@ -42,7 +42,7 @@ class PensionSimulation(object):
         ''' Cette fonction vérifie que le data d'entrée comporte toute
         l'information nécessaire au lancement d'une simulation'''
         info_ind = self.data.info_ind
-        var_info_ind = ['agem', 'sexe', 'tauxprime', 'naiss']
+        var_info_ind = ['age_en_mois', 'sexe', 'tauxprime', 'naiss']
         regime_base_names = ['nb_enf_' + regime.name
                              for regime in self.legislation.regimes['bases']]
         var_info_ind += regime_base_names

@@ -80,7 +80,7 @@ def load_pensipp_data(pensipp_path, yearsim, first_year_sal, selection_id=False,
     if max(info.loc[:,'sexe']) == 2:
             info.loc[:,'sexe'] = info.loc[:,'sexe'].replace(1,0)
             info.loc[:,'sexe'] = info.loc[:,'sexe'].replace(2,1)
-    info.loc[:,'agem'] =  (yearsim - info['t_naiss'])*12
+    info.loc[:,'age_en_mois'] =  (yearsim - info['t_naiss'])*12
 
     if selection_id:
         id_selected =  selection_id
@@ -89,20 +89,20 @@ def load_pensipp_data(pensipp_path, yearsim, first_year_sal, selection_id=False,
         id_selected = select_id_depart[select_id_depart == True].index
 
     elif selection_age:
-        agem_selected = [12*age for age in selection_age]
-        select_id_depart = (info.loc[:,'agem'].isin(agem_selected))
+        age_en_mois_selected = [12*age for age in selection_age]
+        select_id_depart = (info.loc[:,'age_en_mois'].isin(age_en_mois_selected))
         id_selected = select_id_depart[select_id_depart == True].index
 
     info.drop('t_naiss', axis=1, inplace=True)
     ix_selected = [int(ident) - 1 for ident in id_selected]
 
-    sali = salaire.iloc[ix_selected, :]
+    salaire_imposable = salaire.iloc[ix_selected, :]
     workstate = statut.iloc[ix_selected, :]
     info_child_ = _child_by_age(info_child, yearsim, id_selected)
     nb_pac = count_enf_pac(info_child_, info.index)
     info_ind = info.iloc[ix_selected,:]
     info_ind.loc[:,'nb_pac'] = nb_pac
-    data = PensionData.from_arrays(workstate, sali, info_ind)
+    data = PensionData.from_arrays(workstate, salaire_imposable, info_ind)
     data_bounded = data.selected_dates(first=first_year_sal, last=yearsim)
     # TODO: commun declaration for codes and names regimes : Déclaration inapte (mais adapté à Taxipp)
     array_enf = count_enf_by_year(data_bounded.workstate, info_ind, info_child)

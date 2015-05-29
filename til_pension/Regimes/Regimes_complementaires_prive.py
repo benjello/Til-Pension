@@ -24,30 +24,30 @@ class AGIRC(RegimeComplementaires):
     def trim_decote(self, regime='RG'):
         pass
 
-    def sali_for_regime(self, data):
+    def salaire_imposable_for_regime(self, data):
         workstate = data.workstate
-        sali = data.sali
-        return sali*(workstate.isin(self.code_regime))
+        salaire_imposable = data.salaire_imposable
+        return salaire_imposable*(workstate.isin(self.code_regime))
     
     def cotisations(self, data):
         ''' Détermine les cotisations payées au cours de la carrière : même fonction que dans régime mais cet en plus'''
-        sali = data.sali*data.workstate.isin(self.code_regime).astype(int)
+        salaire_imposable = data.salaire_imposable*data.workstate.isin(self.code_regime).astype(int)
         Pcot_regime = reduce(getattr, self.param_name.split('.'), self.P_cot) #getattr(self.P_longit.prive.complementaire,  self.name)
         taux_pat = Pcot_regime.cot_pat
         taux_sal = Pcot_regime.cot_sal
-        assert len(taux_pat) == sali.shape[1] == len(taux_sal)
-        cot_sal_by_year = zeros(sali.shape)
-        cot_pat_by_year = zeros(sali.shape)
-        for ix_year in range(sali.shape[1]):
-            cot_sal_by_year[:,ix_year] = taux_sal[ix_year].calc(sali[:,ix_year])
-            cot_pat_by_year[:,ix_year] = taux_pat[ix_year].calc(sali[:,ix_year])
+        assert len(taux_pat) == salaire_imposable.shape[1] == len(taux_sal)
+        cot_sal_by_year = zeros(salaire_imposable.shape)
+        cot_pat_by_year = zeros(salaire_imposable.shape)
+        for ix_year in range(salaire_imposable.shape[1]):
+            cot_sal_by_year[:,ix_year] = taux_sal[ix_year].calc(salaire_imposable[:,ix_year])
+            cot_pat_by_year[:,ix_year] = taux_pat[ix_year].calc(salaire_imposable[:,ix_year])
             
         cet_pat = Pcot_regime.cet_pat
         cet_sal = Pcot_regime.cet_sal
-        assert len(cet_pat) == sali.shape[1] == len(cet_sal)
-        for ix_year in range(sali.shape[1]):
-            cot_sal_by_year[:,ix_year] += cet_sal[ix_year]*sali[:,ix_year]
-            cot_pat_by_year[:,ix_year] += cet_pat[ix_year]*sali[:,ix_year]
+        assert len(cet_pat) == salaire_imposable.shape[1] == len(cet_sal)
+        for ix_year in range(salaire_imposable.shape[1]):
+            cot_sal_by_year[:,ix_year] += cet_sal[ix_year]*salaire_imposable[:,ix_year]
+            cot_pat_by_year[:,ix_year] += cet_pat[ix_year]*salaire_imposable[:,ix_year]
         return {'sal': cot_sal_by_year, 'pat':cot_pat_by_year}
  
 
@@ -75,11 +75,11 @@ class ARRCO(RegimeComplementaires):
     def trim_FP_to_RG(self, regime='FP'):
         pass
 
-    def sali_for_regime(self, data, trim_FP_to_RG):
+    def salaire_imposable_for_regime(self, data, trim_FP_to_RG):
         '''plafonne le salaire des cadres à 1 pss pour qu'il ne pait que
         la première tranche '''
         workstate = data.workstate
-        sal = data.sali.copy()
+        sal = data.salaire_imposable.copy()
         plaf_ss = self.P_longit.common.plaf_ss
         nb_pss = 1  # TODO: Should be a parameter
         cadre_selection = (workstate == self.code_cadre)

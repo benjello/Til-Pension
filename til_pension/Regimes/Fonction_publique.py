@@ -24,7 +24,7 @@ class FonctionPublique(RegimeBase):
 
     def sal_cot(self, data):
         select = data.workstate.isin(self.code_regime)
-        return data.sali * select
+        return data.salaire_imposable * select
 
     def FP_to_RG(self, data, trim_cot_by_year, sal_cot):
         ''' Détermine les personnes à rapporter au régime général'''
@@ -162,9 +162,9 @@ class FonctionPublique(RegimeBase):
         ''' Détermination de la décote à appliquer aux pensions '''
         P = reduce(getattr, self.param_name.split('.'), self.P)
         if P.decote.nb_trim_max != 0:
-            agem = data.info_ind['agem']
+            age_en_mois = data.info_ind['age_en_mois']
             trim_decote = nb_trim_decote(trimesters_tot, trim_maj_enf_tot,
-                                         agem, P)
+                                         age_en_mois, P)
             return trim_decote
         else:
             return zeros(data.info_ind.shape[0])
@@ -184,12 +184,12 @@ class FonctionPublique(RegimeBase):
 
     def salref(self, data):
         last_fp_idx = data.workstate.idx_last_time_in(self.code_regime)
-        last_fp = zeros(data.sali.shape[0])
-        last_fp[last_fp_idx[0]] = data.sali[last_fp_idx]
+        last_fp = zeros(data.salaire_imposable.shape[0])
+        last_fp[last_fp_idx[0]] = data.salaire_imposable[last_fp_idx]
         P_long = reduce(getattr, self.param_name.split('.'), self.P_longit)
         P = reduce(getattr, self.param_name.split('.'), self.P)
         val_point = P_long.val_point
-        val_point_last_fp = zeros(data.sali.shape[0])
+        val_point_last_fp = zeros(data.salaire_imposable.shape[0])
         val_point_last_fp[last_fp_idx[0]] = \
             array([val_point[date_last] for date_last in last_fp_idx[1]])
         val_point_t = P.val_point
@@ -206,15 +206,15 @@ class FonctionPublique(RegimeBase):
 
     def cotisations(self, data):
         ''' Calcul des cotisations passées par année'''
-        sali = data.sali*data.workstate.isin(self.code_regime).astype(int)
+        salaire_imposable = data.salaire_imposable*data.workstate.isin(self.code_regime).astype(int)
         Pcot_regime = reduce(getattr, self.param_name.split('.'), self.P_cot) #getattr(self.P_longit.prive.complementaire,  self.name)
         taux_prime = array(data.info_ind['tauxprime'])
         taux_pat = Pcot_regime.cot_pat
         taux_sal = Pcot_regime.cot_sal
-        assert len(taux_pat) == sali.shape[1] == len(taux_sal)
-        cot_sal_by_year = zeros(sali.shape)
-        cot_pat_by_year = zeros(sali.shape)
-        for ix_year in range(sali.shape[1]):
-            cot_sal_by_year[:,ix_year] = taux_sal[ix_year]*sali[:,ix_year]/(1+taux_prime)
-            cot_pat_by_year[:,ix_year] = taux_pat[ix_year]*sali[:,ix_year]/(1+taux_prime)
+        assert len(taux_pat) == salaire_imposable.shape[1] == len(taux_sal)
+        cot_sal_by_year = zeros(salaire_imposable.shape)
+        cot_pat_by_year = zeros(salaire_imposable.shape)
+        for ix_year in range(salaire_imposable.shape[1]):
+            cot_sal_by_year[:,ix_year] = taux_sal[ix_year]*salaire_imposable[:,ix_year]/(1+taux_prime)
+            cot_pat_by_year[:,ix_year] = taux_pat[ix_year]*salaire_imposable[:,ix_year]/(1+taux_prime)
         return {'sal': cot_sal_by_year, 'pat':cot_pat_by_year}

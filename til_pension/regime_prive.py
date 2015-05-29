@@ -22,7 +22,7 @@ class RegimePrive(RegimeBase):
 
     def sal_cot(self, data):
         select = data.workstate.isin(self.code_regime)
-        sal = data.sali * select
+        sal = data.salaire_imposable * select
         sal[isnan(sal)] = 0
         return sal
 
@@ -60,10 +60,10 @@ class RegimePrive(RegimeBase):
             revalo[:i] *= revalo[i]
 
         sal_regime.translate_frequency(output_frequency='year', method='sum', inplace=True)
-        years_sali = (sal_regime != 0).sum(axis=1)
+        years_salaire_imposable = (sal_regime != 0).sum(axis=1)
         nb_best_years_to_take = array(nb_best_years_to_take)
-        nb_best_years_to_take[years_sali < nb_best_years_to_take] = \
-            years_sali[years_sali < nb_best_years_to_take]
+        nb_best_years_to_take[years_salaire_imposable < nb_best_years_to_take] = \
+            years_salaire_imposable[years_salaire_imposable < nb_best_years_to_take]
 
         if plafond is not None:
             assert sal_regime.shape[1] == len(plafond)
@@ -77,12 +77,12 @@ class RegimePrive(RegimeBase):
     def trim_decote(self, data, trimesters_tot, trim_maj_enf_tot):
         ''' Détermination de la décote à appliquer aux pensions '''
         P = reduce(getattr, self.param_name.split('.'), self.P)
-        agem = data.info_ind['agem']
+        age_en_mois = data.info_ind['age_en_mois']
         if P.decote.dispositif == 1:
             age_annulation = P.decote.age_null
-            trim_decote = max(divide(age_annulation - agem, 3), 0)
+            trim_decote = max(divide(age_annulation - age_en_mois, 3), 0)
         elif P.decote.dispositif == 2:
-            trim_decote = nb_trim_decote(trimesters_tot, trim_maj_enf_tot, agem, P)
+            trim_decote = nb_trim_decote(trimesters_tot, trim_maj_enf_tot, age_en_mois, P)
         return trim_decote
 
     def age_annulation_decote(self):
@@ -93,7 +93,7 @@ class RegimePrive(RegimeBase):
     def coeff_proratisation(self, info_ind, nb_trimesters, trim_maj):
         ''' Calcul du coefficient de proratisation '''
 
-        def _assurance_corrigee(trim_regime, agem):
+        def _assurance_corrigee(trim_regime, age_en_mois):
             '''
             Deux types de corrections :
             - correction de 1948-1982
@@ -106,7 +106,7 @@ class RegimePrive(RegimeBase):
                 return trim_regime + correction
             elif P.prorat.dispositif == 2:
                 age_taux_plein = P.decote.age_null
-                trim_majo = divide(agem - age_taux_plein, 3)*(agem > age_taux_plein)
+                trim_majo = divide(age_en_mois - age_taux_plein, 3)*(age_en_mois > age_taux_plein)
                 elig_majo = (trim_regime < P.prorat.n_trim)
                 correction = trim_regime*P.tx_maj*trim_majo*elig_majo
                 return trim_regime + correction
@@ -114,7 +114,7 @@ class RegimePrive(RegimeBase):
                 return trim_regime
 
         P = reduce(getattr, self.param_name.split('.'), self.P)
-        trim_regime = trim_maj + nb_trimesters  # _assurance_corrigee(trim_regime, agem)
+        trim_regime = trim_maj + nb_trimesters  # _assurance_corrigee(trim_regime, age_en_mois)
         # disposition pour montée en charge de la loi Boulin (ne s'applique qu'entre 72 et 74) :
         if P.prorat.application_plaf == 1:
             trim_regime = minimum(trim_regime, P.prorat.plaf)

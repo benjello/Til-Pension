@@ -39,17 +39,17 @@ def trimesters_after_event(data, event, code):
     return trim_after_event
 
 
-def imput_sali_avpf(data, code, P_longit):
+def imput_salaire_imposable_avpf(data, code, P_longit):
     # TODO: move to an other place
     data_avpf = data.selected_regime(code)
-    sali_avpf = data_avpf.sali
-    if (sali_avpf == 0).all():
+    salaire_imposable_avpf = data_avpf.salaire_imposable
+    if (salaire_imposable_avpf == 0).all():
         # TODO: frquency warning, cette manière de calculer les trimestres avpf
         # ne fonctionne qu'avec des tables annuelles
         year_avpf = (data_avpf.workstate != 0)
         avpf = P_longit.common.avpf
-        sali_avpf = 12*multiply(year_avpf, avpf)
-    return sali_avpf
+        salaire_imposable_avpf = 12*multiply(year_avpf, avpf)
+    return salaire_imposable_avpf
 
 
 def trim_mda(info_ind, name_regime, P):
@@ -85,7 +85,7 @@ def nb_trim_surcote(trim_by_year, selected_dates, date_start_surcote):
     return nb_trim
 
 
-def nb_trim_decote(trimesters, trim_maj_enf, agem, P):
+def nb_trim_decote(trimesters, trim_maj_enf, age_en_mois, P):
     ''' Cette fonction renvoie le vecteur numpy du nombre de trimestres décotés
     Lorsque les deux règles (d'âge et de nombre de trimestres cibles) jouent
     -> Ref : Article L351-1-2 : les bonifications de durée de services et majorations de durée d'assurance,
@@ -95,7 +95,7 @@ def nb_trim_decote(trimesters, trim_maj_enf, agem, P):
     age_annulation = array(P.decote.age_null)
     plafond = array(P.decote.nb_trim_max)
     n_trim = array(P.plein.n_trim)
-    trim_decote_age = divide(age_annulation - agem, 3)
+    trim_decote_age = divide(age_annulation - age_en_mois, 3)
 
     trim_tot = trimesters.sum(axis=1) + trim_maj_enf
     trim_decote_cot = n_trim - trim_tot

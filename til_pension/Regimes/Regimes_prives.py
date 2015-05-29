@@ -5,7 +5,7 @@ from numpy import isnan, divide, minimum, multiply, zeros
 from til_pension.pension_data import PensionData
 from til_pension.regime import compare_destinie
 from til_pension.regime_prive import RegimePrive
-from til_pension.trimesters_functions import trimesters_after_event, imput_sali_avpf, trim_mda
+from til_pension.trimesters_functions import trimesters_after_event, imput_salaire_imposable_avpf, trim_mda
 
 
 code_avpf = 8
@@ -28,17 +28,17 @@ class RegimeGeneral(RegimePrive):
 
     def data_avpf(self, data):
         # TODO: move to an other place in set_config or in PensionData
-        data_avpf = PensionData(data.workstate, data.sali, data.info_ind)
-        data_avpf.sali = imput_sali_avpf(data_avpf, code_avpf, self.P_longit)
+        data_avpf = PensionData(data.workstate, data.salaire_imposable, data.info_ind)
+        data_avpf.salaire_imposable = imput_salaire_imposable_avpf(data_avpf, code_avpf, self.P_longit)
         if compare_destinie:
             smic_long = self.P_longit.common.smic_proj
             year_avpf = (data_avpf.workstate != 0)
-            data_avpf.sali = multiply(year_avpf, smic_long)
+            data_avpf.salaire_imposable = multiply(year_avpf, smic_long)
         return data_avpf
 
     def sal_avpf(self, data_avpf):
         select = data_avpf.workstate.isin(code_avpf)
-        sal_avpf = data_avpf.sali*select
+        sal_avpf = data_avpf.salaire_imposable*select
         sal_avpf[isnan(sal_avpf)] = 0
         return sal_avpf
 
@@ -129,10 +129,10 @@ class RegimeSocialIndependants(RegimePrive):
 
     def cotisations(self, data):
         ''' Calcul des cotisations passées par année'''
-        sali = data.sali*data.workstate.isin(self.code_regime).astype(int)
+        salaire_imposable = data.salaire_imposable*data.workstate.isin(self.code_regime).astype(int)
         taux = self.P_cot.indep.cot_arti
-        assert len(taux) == sali.shape[1]
-        cot_by_year = zeros(sali.shape)
-        for ix_year in range(sali.shape[1]):
-            cot_by_year[:,ix_year] = taux[ix_year]*sali[:,ix_year]
+        assert len(taux) == salaire_imposable.shape[1]
+        cot_by_year = zeros(salaire_imposable.shape)
+        for ix_year in range(salaire_imposable.shape[1]):
+            cot_by_year[:,ix_year] = taux[ix_year]*salaire_imposable[:,ix_year]
         return {'tot': cot_by_year}

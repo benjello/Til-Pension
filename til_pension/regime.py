@@ -43,7 +43,7 @@ class Regime(object):
         ''' Détermine la date individuelle a partir de laquelle on atteint la surcote
         (a atteint l'âge légal de départ en retraite + côtisé le nombre de trimestres cible)
         Rq : pour l'instant on pourrait ne renvoyer que l'année'''
-        agem = data.info_ind['agem']
+        age_en_mois = data.info_ind['age_en_mois']
         # TODO: do something better with datesim
         datesim = self.dateleg.liam
         P = reduce(getattr, self.param_name.split('.'), self.P)
@@ -61,7 +61,7 @@ class Regime(object):
 
             # 2. Construction de la matrice des booléens indiquant si l'année
             # est surcotée selon critère âge
-            age_by_year = array([array(agem) - 12*i for i in reversed(range(nb_years))])
+            age_by_year = array([array(age_en_mois) - 12*i for i in reversed(range(nb_years))])
             years_surcote_age = greater(age_by_year, array(age_min_retirement)).T
 
             # 3. Décompte du nombre d'années répondant aux deux critères
@@ -78,12 +78,12 @@ class Regime(object):
         ''' Détermine la date individuelle a partir de laquelle on atteint le
         taux plein condition date_surcote ou si atteint l'âge du taux plein
         Rq : pour l'instant on pourrait ne renvoyer que l'année'''
-        agem = data.info_ind['agem']
+        age_en_mois = data.info_ind['age_en_mois']
         datesim = self.dateleg.liam
         # TODO: find the origin of that non int array
         age_annulation_decote = age_annulation_decote.astype(int)
         datesim_in_month = 12*(datesim // 100) + datesim % 100
-        start_taux_plein_in_month = agem - age_annulation_decote
+        start_taux_plein_in_month = age_en_mois - age_annulation_decote
         datenaiss_in_month = datesim_in_month - start_taux_plein_in_month
         start_taux_plein = 100*(datenaiss_in_month // 12) + datenaiss_in_month % 12 + 1
         start_taux_plein[datenaiss_in_month < 0] = 2100*100 + 1  # =inf
@@ -100,7 +100,7 @@ class Regime(object):
 
 
     def calculate_salref(self):
-#         self.sal_regime = sali*_isin(self.workstate.array,self.code_regime)
+#         self.sal_regime = salaire_imposable*_isin(self.workstate.array,self.code_regime)
         raise NotImplementedError
 
     def bonif_pension(self, data, trim_wage_reg, trim_wage_all, pension_reg, pension_surcote_reg, pension_all, unactive=[]):
@@ -113,18 +113,18 @@ class Regime(object):
 
     def cotisations(self, data):
         ''' Calcul des cotisations passées par année'''
-        sali = data.sali*data.workstate.isin(self.code_regime).astype(int)
+        salaire_imposable = data.salaire_imposable*data.workstate.isin(self.code_regime).astype(int)
         assert self.P_cot is not None, 'self.P_cot should be not None'
         Pcot_regime = reduce(getattr, self.param_name.split('.'), self.P_cot) #getattr(self.P_longit.prive.complementaire,  self.name)
         taux_pat = Pcot_regime.cot_pat
         taux_sal = Pcot_regime.cot_sal
-        #print len(taux_pat), sali.shape[1], len(taux_sal), self.name
-        assert len(taux_pat) == sali.shape[1] == len(taux_sal)
-        cot_sal_by_year = zeros(sali.shape)
-        cot_pat_by_year = zeros(sali.shape)
-        for ix_year in range(sali.shape[1]):
-            cot_sal_by_year[:,ix_year] = taux_sal[ix_year].calc(sali[:,ix_year])
-            cot_pat_by_year[:,ix_year] = taux_pat[ix_year].calc(sali[:,ix_year])
+        #print len(taux_pat), salaire_imposable.shape[1], len(taux_sal), self.name
+        assert len(taux_pat) == salaire_imposable.shape[1] == len(taux_sal)
+        cot_sal_by_year = zeros(salaire_imposable.shape)
+        cot_pat_by_year = zeros(salaire_imposable.shape)
+        for ix_year in range(salaire_imposable.shape[1]):
+            cot_sal_by_year[:,ix_year] = taux_sal[ix_year].calc(salaire_imposable[:,ix_year])
+            cot_pat_by_year[:,ix_year] = taux_pat[ix_year].calc(salaire_imposable[:,ix_year])
 
         if sal_nominal == False:
             revalo = self.P_longit.prive.RG.revalo
@@ -147,18 +147,18 @@ class RegimeBase(Regime):
     def trim_maj(self):
         return 0
 
-    def revenu_valides(self, workstate, sali, code=None):
+    def revenu_valides(self, workstate, salaire_imposable, code=None):
         ''' Cette fonction pertmet de calculer des nombres par trimesters
         TODO: gérer la comptabilisation des temps partiels quand variable présente'''
         assert isinstance(workstate, TimeArray)
-        # assert isinstance(sali, TimeArray)
+        # assert isinstance(salaire_imposable, TimeArray)
         if code is None:
             code = self.code_regime
         wk_selection = workstate.isin(self.code_regime)
         wk_selection.translate_frequency(output_frequency='month', inplace=True)
-        # TODO: condition not assuming sali is in year
-        sali.translate_frequency(output_frequency='month', inplace=True)
-        sali = around(divide(sali, 12), decimals=3)
+        # TODO: condition not assuming salaire_imposable is in year
+        salaire_imposable.translate_frequency(output_frequency='month', inplace=True)
+        salaire_imposable = around(divide(salaire_imposable, 12), decimals=3)
         trim = divide(wk_selection.sum(axis=1), 4).astype(int)
         return trim
 
@@ -216,7 +216,7 @@ class RegimeComplementaires(Regime):
         self.param_base = None
         self.regime_base = None
 
-    def nombre_points(self, data, sali_for_regime):
+    def nombre_points(self, data, salaire_imposable_for_regime):
         ''' Détermine le nombre de point à liquidation de la pension dans les
         régimes complémentaires (pour l'instant Ok pour ARRCO/AGIRC)
         Pour calculer ces points, il faut diviser la cotisation annuelle
@@ -225,12 +225,12 @@ class RegimeComplementaires(Regime):
         Plong_regime = reduce(getattr, self.param_name.split('.'), self.P_longit) #getattr(self.P_longit.prive.complementaire,  self.name)
         salref = Plong_regime.sal_ref
         taux_cot = Plong_regime.taux_cot_moy
-        sali_plaf = sali_for_regime
-        assert len(salref) == sali_plaf.shape[1] == len(taux_cot)
-        nombre_points = zeros(sali_plaf.shape)
-        for ix_year in range(sali_plaf.shape[1]):
+        salaire_imposable_plaf = salaire_imposable_for_regime
+        assert len(salref) == salaire_imposable_plaf.shape[1] == len(taux_cot)
+        nombre_points = zeros(salaire_imposable_plaf.shape)
+        for ix_year in range(salaire_imposable_plaf.shape[1]):
             if salref[ix_year] > 0:
-                nombre_points[:, ix_year] = (taux_cot[ix_year].calc(sali_plaf[:, ix_year])/salref[ix_year])
+                nombre_points[:, ix_year] = (taux_cot[ix_year].calc(salaire_imposable_plaf[:, ix_year])/salref[ix_year])
         nb_points_by_year = nombre_points.round(2)
         return nb_points_by_year
 
@@ -245,10 +245,10 @@ class RegimeComplementaires(Regime):
         ''' TODO: add surcote  pour avant 1955 '''
         P = reduce(getattr, self.param_name.split('.'), self.P)
         coef_mino = P.coef_mino
-        agem = data.info_ind['agem']
+        age_en_mois = data.info_ind['age_en_mois']
         age_annulation_decote = self.P.prive.RG.decote.age_null
-        diff_age = divide(age_annulation_decote - agem, 12)*(age_annulation_decote > agem)
-        coeff_min = zeros(len(agem))
+        diff_age = divide(age_annulation_decote - age_en_mois, 12)*(age_annulation_decote > age_en_mois)
+        coeff_min = zeros(len(age_en_mois))
         for nb_annees, coef_mino in coef_mino._tranches:
             coeff_min += (diff_age == nb_annees)*coef_mino
 

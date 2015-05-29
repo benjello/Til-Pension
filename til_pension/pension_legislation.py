@@ -170,7 +170,7 @@ class PensionLegislation(object):
     Class à envoyer à Simulation de Til-pension qui contient toutes les informations sur la législations. Elle tient compte de:
     - la date de législation demandée (sélection adéquate des paramètres)
     - les infos individuelles contenues dans data.info_ind (pour les paramètres par génération)
-    - la structure des tables sali/workstate (pour ajuster la longueur des paramètres long)
+    - la structure des tables salaire_imposable/workstate (pour ajuster la longueur des paramètres long)
     '''
     def __init__(self, param):
         # TODO: use all attrbutes except data in a PensionParam class
@@ -261,9 +261,9 @@ if __name__ == '__main__':
 #        (833, 3.0, 0.0, datetime.date(1941, 1, 1), 756.0, 0.0, 3.0),
 #        (834, 3.0, 1.0, datetime.date(1941, 1, 1), 756.0, 0.0, 3.0),
 #        (956, 0.0, 0.0, datetime.date(1941, 1, 1), 756.0, 0.0, 0.0)],
-#       dtype=[('index', '<i8'), ('n_enf', '<f8'), ('sexe', '<f8'), ('naiss', 'O'), ('agem', '<f8'), ('nb_pac', '<f8'), ('nb_born', '<f8'), ('date_liquidation', 'O')])
-#     sali = DataFrame(0, index=info_ind['index'], columns=[201301,201401])
-#     data = PensionData.from_arrays(sali, sali, info_ind)
+#       dtype=[('index', '<i8'), ('n_enf', '<f8'), ('sexe', '<f8'), ('naiss', 'O'), ('age_en_mois', '<f8'), ('nb_pac', '<f8'), ('nb_born', '<f8'), ('date_liquidation', 'O')])
+#     salaire_imposable = DataFrame(0, index=info_ind['index'], columns=[201301,201401])
+#     data = PensionData.from_arrays(salaire_imposable, salaire_imposable, info_ind)
 #
 #     param = PensionParam(2015, data)
 #     print(param.param.prive.RG.prorat)
@@ -278,11 +278,11 @@ if __name__ == '__main__':
 #        (833L, 3.0, 0.0, datetime.date(1941, 1, 1), 756.0, 0.0, 3.0),
 #        (834L, 3.0, 1.0, datetime.date(1941, 1, 1), 756.0, 0.0, 3.0),
 #        (956L, 0.0, 0.0, datetime.date(1941, 1, 1), 756.0, 0.0, 0.0)]),
-#        columns = ['ind', 'n_enf', 'sexe', 'naiss', 'agem', 'nb_pac', 'nb_born'])
+#        columns = ['ind', 'n_enf', 'sexe', 'naiss', 'age_en_mois', 'nb_pac', 'nb_born'])
 #
-#  #     colu=[('index', '<i8'), ('n_enf', '<f8'), ('sexe', '<f8'), ('naiss', 'O'), ('agem', '<f8'), ('nb_pac', '<f8'), ('nb_born', '<f8')])
-#     sali = DataFrame(0, index=info_ind.index, columns=[201301,201401])
-#     data = PensionData.from_arrays(sali, sali, info_ind)
+#  #     colu=[('index', '<i8'), ('n_enf', '<f8'), ('sexe', '<f8'), ('naiss', 'O'), ('age_en_mois', '<f8'), ('nb_pac', '<f8'), ('nb_born', '<f8')])
+#     salaire_imposable = DataFrame(0, index=info_ind.index, columns=[201301,201401])
+#     data = PensionData.from_arrays(salaire_imposable, salaire_imposable, info_ind)
 #
 #     param = PensionParam(2015, data)
 #     print param.P_cot
